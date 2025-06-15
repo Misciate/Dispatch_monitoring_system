@@ -1,0 +1,5 @@
+Dataset/
+virenv/
+output_result.mp4
+Models/yolov5/
+Models/yolov5/mobilenetv2_classification.pth

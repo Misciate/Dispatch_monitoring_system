@@ -1,0 +1,5 @@
+train: E:\interview_assignment\dispatch_monitoring_system\Dataset\Detection\train\images   # Đường dẫn đến ảnh training
+val: E:\interview_assignment\dispatch_monitoring_system\Dataset\Detection\val\images         # Đường dẫn đến ảnh validation
+
+nc: 2                                       # Số lượng class (dish, tray)
+names: ['dish', 'tray']                     # Tên class, theo thứ tự label YOLO (0, 1)
