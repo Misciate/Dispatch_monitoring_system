@@ -21,8 +21,8 @@ mobilenet_model.eval()
 
 # --- Class mapping based on YOLO detection ---
 class_mapping = {
-    0: {0: 'dish/empty', 1: 'dish/not_empty', 2: 'dish/kakigori'},  # Dish (YOLO class 0)
-    1: {3: 'tray/empty', 4: 'tray/not_empty', 5: 'tray/kakigori'}   # Tray (YOLO class 1)
+    0: {0: 'dish/empty', 1: 'dish/kakigori', 2: 'dish/not_empty'},  # Dish (YOLO class 0)
+    1: {3: 'tray/empty', 4: 'tray/kakigori', 5: 'tray/not_empty'}   # Tray (YOLO class 1)
 }
 
 # --- Preprocessing for classification ---

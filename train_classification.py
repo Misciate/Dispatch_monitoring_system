@@ -8,18 +8,20 @@ from tqdm import tqdm
 # ==== CẤU HÌNH ====
 data_dir = 'Dataset/classification_flat'
 batch_size = 32
-num_epochs = 25  
+num_epochs = 20  # Giảm xuống 20
 learning_rate = 1e-4
-num_classes = 6  # 6 lớp: dish/empty, dish/not_empty, dish/kakigori, tray/empty, tray/not_empty, tray/kakigori
+num_classes = 6  # 6 lớp
 
 # ==== TIỀN XỬ LÝ ====
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
-# ==== LOAD DATA (định nghĩa ở mức module) ===
+# ==== LOAD DATA ====
 dataset = datasets.ImageFolder(root=data_dir, transform=transform)
 total_size = len(dataset)
 train_size = int(0.8 * total_size)
@@ -29,14 +31,15 @@ train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-
-# ==== CHỈ CHẠY HUẤN LUYỆN KHI LÀ MAIN ===
+# ==== IN RA PHÂN PHỐI LỚP ===
 if __name__ == '__main__':
-    # ==== IN RA TÊN CÁC LỚP (định nghĩa ở mức module) ===
     print("Class mapping:")
     for idx, class_name in enumerate(dataset.classes):
         print(f"{idx}: {class_name}")
-    print("Total classes:", len(dataset.classes))
+    class_counts = {class_name: 0 for class_name in dataset.classes}
+    for _, label in dataset:
+        class_counts[dataset.classes[label]] += 1
+    print("Class distribution:", class_counts)
 
     # ==== LOAD MODEL ====
     mobilenet_model = models.mobilenet_v2(weights='DEFAULT')
@@ -48,10 +51,12 @@ if __name__ == '__main__':
 
     # ==== HUẤN LUYỆN ====
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(mobilenet_model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(mobilenet_model.parameters(), lr=learning_rate, weight_decay=1e-4)
 
     mobilenet_model.train()
     best_val_loss = float('inf')
+    patience = 5
+    trigger_times = 0
     for epoch in range(num_epochs):
         # Train
         running_loss = 0.0
@@ -92,12 +97,18 @@ if __name__ == '__main__':
         print(f"Epoch {epoch+1}, Train Loss: {running_loss/len(train_loader):.4f}, Train Acc: {train_acc:.2f}%, "
               f"Val Loss: {avg_val_loss:.4f}, Val Acc: {val_acc:.2f}%")
 
-        # Save best model
+        # Save best model with early stopping
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
+            trigger_times = 0
             os.makedirs('Models', exist_ok=True)
             torch.save(mobilenet_model.state_dict(), 'Models/mobilenetv2_classification.pth')
             print("✅ Saved best model to Models/mobilenetv2_classification.pth")
+        else:
+            trigger_times += 1
+            if trigger_times >= patience:
+                print("Early stopping triggered!")
+                break
 
     mobilenet_model.train()
 
