@@ -5,45 +5,45 @@ from PIL import Image
 import numpy as np
 import os
 from pathlib import Path
+import torch.nn as nn
 
 # --- Load YOLOv5 model ---
-yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='Models/yolov5/runs/train/dispatch_yolo/weights/best.pt')  # cập nhật path nếu khác
-yolo_model.conf = 0.25  # confidence threshold
-yolo_model.iou = 0.45   # iou threshold
-yolo_model.classes = None  # detect cả dish và tray
+yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='Models/yolov5/runs/train/dispatch_yolo/weights/best.pt')
+yolo_model.conf = 0.25
+yolo_model.iou = 0.45
+yolo_model.classes = None
 
 # --- Load MobileNetV2 classification model ---
 mobilenet_model = models.mobilenet_v2(weights=None)
-mobilenet_model.classifier[1] = torch.nn.Linear(mobilenet_model.last_channel, 6)
-mobilenet_model.load_state_dict(torch.load('Models/mobilenetv2_classification.pth', map_location='cpu'))  # đổi thành 'cuda' nếu dùng GPU
+mobilenet_model.classifier[1] = nn.Linear(mobilenet_model.last_channel, 6)  # 6 lớp: 0-5
+mobilenet_model.load_state_dict(torch.load('Models/mobilenetv2_classification.pth', map_location='cuda' if torch.cuda.is_available() else 'cpu'))
 mobilenet_model.eval()
 
-# --- Class mapping ---
+# --- Class mapping based on YOLO detection ---
 class_mapping = {
-    0: 'dish/empty',
-    1: 'dish/kakigori',
-    2: 'dish/not_empty',
-    3: 'tray/empty',
-    4: 'tray/kakigori',
-    5: 'tray/not_empty'
+    0: {0: 'dish/empty', 1: 'dish/not_empty', 2: 'dish/kakigori'},  # Dish (YOLO class 0)
+    1: {3: 'tray/empty', 4: 'tray/not_empty', 5: 'tray/kakigori'}   # Tray (YOLO class 1)
 }
 
 # --- Preprocessing for classification ---
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
 # --- Inference function ---
 def detect_and_classify(video_path, output_path):
     cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"Error: Cannot open video {video_path}")
+        return
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+    fourcc = cv2.VideoWriter_fourcc(*'H264')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
     frame_idx = 0
     while True:
@@ -52,28 +52,26 @@ def detect_and_classify(video_path, output_path):
             break
 
         results = yolo_model(frame)
-        boxes = results.xyxy[0]  # tensor: (x1, y1, x2, y2, conf, cls)
+        boxes = results.xyxy[0]
 
         for *xyxy, conf, cls in boxes:
             x1, y1, x2, y2 = map(int, xyxy)
-            label_det = int(cls.item())
-
-            # Crop region
+            label_det = int(cls.item())  # 0 for dish, 1 for tray
             crop = frame[y1:y2, x1:x2]
             if crop.size == 0:
                 continue
 
-            # Convert to PIL and classify
             try:
                 img_pil = Image.fromarray(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB))
                 input_tensor = transform(img_pil).unsqueeze(0)
                 output = mobilenet_model(input_tensor)
-                class_idx = torch.argmax(output, 1).item()
-                label = class_mapping[class_idx]
+                class_idx = torch.argmax(output, 1).item()  # 0, 1, 2, 3, 4, or 5
+                # Ánh xạ class_idx dựa trên nhãn YOLO
+                label = next((v for k, v in class_mapping[label_det].items() if k == class_idx), f"Error_{label_det}")
             except Exception as e:
-                label = "Error"
+                print(f"Error in classification: {e}")
+                label = f"Error_{label_det}"
 
-            # Draw results
             color = (0, 255, 0)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
@@ -86,9 +84,8 @@ def detect_and_classify(video_path, output_path):
     out.release()
     print(f"✅ Output saved to: {output_path}")
 
-
 # --- Main ---
 if __name__ == '__main__':
-    video_path = 'Dataset/example_1.mp4'  # ← Cập nhật đúng tên video của bạn
+    video_path = 'Dataset/example_1.mp4'
     output_path = 'output_result.mp4'
     detect_and_classify(video_path, output_path)
