@@ -22,5 +22,5 @@ COPY . .
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Default command (can be overridden by docker-compose)
-CMD ["python", "detect_classificate_video.py"]
+# Default command to run Streamlit (can be overridden by docker-compose)
+CMD ["streamlit", "run", "feedback_interface.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
