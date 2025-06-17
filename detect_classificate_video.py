@@ -6,9 +6,11 @@ import numpy as np
 import os
 import torch.nn as nn
 from pathlib import Path
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # --- Load YOLOv5 model ---
-yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='Models/yolov5/runs/train/dispatch_yolo/weights/best.pt')
+yolo_model = torch.hub.load('ultralytics/yolov5', 'custom', path='Models/best.pt')
 yolo_model.conf = 0.25
 yolo_model.iou = 0.45
 yolo_model.classes = None
@@ -53,6 +55,13 @@ def detect_and_classify(video_path, output_path):
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+    # Khởi tạo thư mục feedback nếu chưa tồn tại
+    feedback_dir = Path("feedback")
+    feedback_dir.mkdir(exist_ok=True)
+    feedback_pending_file = "feedback_pending.txt"
+    if os.path.exists(feedback_pending_file):
+        os.remove(feedback_pending_file)  # Xóa file cũ để tránh trùng lặp
 
     frame_idx = 0
     while True:
@@ -110,6 +119,12 @@ def detect_and_classify(video_path, output_path):
                 else:
                     label = class_names[class_idx]
                 print(f"[Frame {frame_idx}] YOLO: {yolo_label}, Class: {class_idx} → {label}, Confidence: {max_prob:.2f}")
+
+                # Lưu frame và nhãn dự đoán cho feedback
+                frame_filename = f"feedback_frame_{frame_idx}_{yolo_label}_{class_idx}.jpg"
+                cv2.imwrite(str(feedback_dir / frame_filename), frame)
+                with open(feedback_pending_file, "a") as f:
+                    f.write(f"{frame_filename},{label}\n")
 
             except Exception as e:
                 print(f"[❌] Classification error at frame {frame_idx}: {e}")

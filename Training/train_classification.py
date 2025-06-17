@@ -8,7 +8,7 @@ from tqdm import tqdm
 # ==== CẤU HÌNH ====
 data_dir = 'Dataset/classification_flat'
 batch_size = 32
-num_epochs = 20  # Giảm xuống 20
+num_epochs = 20 
 learning_rate = 1e-4
 num_classes = 6  # 6 lớp
 

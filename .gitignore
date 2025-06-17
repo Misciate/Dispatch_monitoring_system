@@ -1,5 +1,11 @@
+# Ignore dataset and large files
 Dataset/
-virenv/
+feedback/*
+feedback/confirmed/*
 output_result.mp4
+output_detected_image.jpg
+perspective_matrix.npy
+warped_cropped_roi.png
 Models/yolov5/
-Models/yolov5/mobilenetv2_classification.pth
+virenv/
+__pycache__/
