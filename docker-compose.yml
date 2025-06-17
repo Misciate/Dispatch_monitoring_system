@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  detector:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"  # Port để debug nếu cần (tùy chọn)
+    environment:
+      - VIDEO_PATH=/app/Dataset/example2.mp4
+      - OUTPUT_PATH=/app/output_result.mp4
+    command: python detect_classificate_video.py
+    depends_on:
+      - feedback
+
+  feedback:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"  # Port cho Streamlit
+    command: streamlit run feedback_interface.py --server.port 8501 --server.address 0.0.0.0
+    depends_on:
+      - retrain
+
+  retrain:
+    build: .
+    volumes:
+      - .:/app
+    command: python retrain_model.py
+
+volumes:
+  app_data:
