@@ -144,6 +144,6 @@ def detect_and_classify(video_path, output_path):
 
 # --- Run ---
 if __name__ == '__main__':
-    video_path = 'Dataset/example2.mp4'
+    video_path = 'Dataset/example[4minutes].mp4'
     output_path = 'output_result.mp4'
     detect_and_classify(video_path, output_path)

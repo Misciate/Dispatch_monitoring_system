@@ -18,8 +18,30 @@ The **Dispatch Monitoring System** is an intelligent monitoring solution designe
   - [Docker](https://www.docker.com/products/docker-desktop/)
   - [Docker Compose](https://docs.docker.com/compose/install/) (included with Docker Desktop)
   - Git (to clone repository)
+- **Dataset**:
+  - [link data](https://drive.google.com/drive/folders/1chvJfXgbFI3GSSa-8bHJh7kbDbx4hPnp?usp=sharing)
 
 ## Installation
+- **project structure**:
+Dispatch-Monitoring-System/
+├── Models/               # Trained models (best.pt, mobilenetv2_classification.pth)
+├── feedback/             # Feedback structure
+│   ├── confirmed/        # Subdirectory for confirmed feedback
+│   │   ├── dish/empty/
+│   │   ├── dish/kakigori/
+│   │   ├── dish/not_empty/
+│   │   ├── tray/empty/
+│   │   ├── tray/kakigori/
+│   │   └── tray/not_empty/
+├── detect_classificate_video.py # Main detection and classification script
+├── feedback_interface.py  # Streamlit-based feedback interface
+├── retrain_model.py       # Script to retrain the model with feedback
+├── train_classification.py # Script to train the classification model (if included)
+├── Dockerfile             # Docker configuration
+├── docker-compose.yml     # Docker Compose file
+├── requirements.txt       # Python dependencies
+├── README.md              # Project documentation
+├── .gitignore             # Ignore unnecessary files
 
 ### Prerequisites
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and ensure Docker Compose is available.
