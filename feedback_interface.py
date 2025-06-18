@@ -10,7 +10,7 @@ from datetime import datetime
 FEEDBACK_DIR = Path("feedback")
 FEEDBACK_CONFIRMED = FEEDBACK_DIR / "confirmed"
 FEEDBACK_CSV = "feedback.csv"
-OUTPUT_VIDEO = "Result_video_[4minutes]"  # Đảm bảo file đã chuyển đổi
+OUTPUT_VIDEO = "Dataset/Result_video_[4minutes].mp4"  # Đảm bảo file đã chuyển đổi
 FEEDBACK_PENDING = "feedback_pending.txt"
 
 # Khởi tạo file CSV nếu chưa tồn tại
